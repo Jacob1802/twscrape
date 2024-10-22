@@ -658,6 +658,25 @@ def _parse_items(rep: httpx.Response, kind: str, limit: int = -1):
 
 
 # public helpers
+def parse_trends(item):
+    # Access the entries where trends are located
+    entries = item.get('data', {}).get('timeline', {}).get('timeline', {}).get('instructions', [])
+    
+    for instruction in entries:
+        if instruction.get('type') == 'TimelineAddEntries':
+            for entry in instruction.get('entries', []):
+                content = entry.get('content', {})
+                if content.get('entryType') == 'TimelineTimelineModule':
+                    for item in content.get('items', []):
+                        trend_item = item.get('item', {}).get('itemContent', {})
+                        if trend_item.get('itemType') == 'TimelineTrend':
+                            trend_data = {
+                                'name': trend_item.get('name'),
+                                'rank': trend_item.get('rank'),
+                                'url': trend_item.get('trend_url', {}).get('url'),
+                                'meta_description': trend_item.get('trend_metadata', {}).get('meta_description')
+                            }
+                            yield trend_data
 
 
 def parse_tweets(rep: httpx.Response, limit: int = -1) -> Generator[Tweet, None, None]:

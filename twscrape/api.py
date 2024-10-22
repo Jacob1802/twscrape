@@ -5,7 +5,7 @@ from typing_extensions import deprecated
 
 from .accounts_pool import AccountsPool
 from .logger import set_log_level
-from .models import Tweet, User, parse_tweet, parse_tweets, parse_user, parse_users
+from .models import Tweet, User, parse_tweet, parse_tweets, parse_user, parse_users, parse_trends
 from .queue_client import QueueClient
 from .utils import encode_params, find_obj, get_by_path
 
@@ -26,6 +26,7 @@ OP_BlueVerifiedFollowers = "cpPRJUmSz2Fiu1PpIYmEsw/BlueVerifiedFollowers"
 OP_UserCreatorSubscriptions = "qHaReNBi0rkhjAe14jrs6A/UserCreatorSubscriptions"
 OP_UserMedia = "dexO_2tohK86JDudXXG3Yw/UserMedia"
 OP_Bookmarks = "QUjXply7fA7fk05FRyajEg/Bookmarks"
+OP_Trends = "eob7MfQ-OPla82tbCSxZUA/GenericTimelineById"
 
 
 GQL_URL = "https://x.com/i/api/graphql"
@@ -495,3 +496,22 @@ class API:
             async for rep in gen:
                 for x in parse_tweets(rep.json(), limit):
                     yield x
+
+    async def trending_tab_raw(self, kv=None):
+        op = OP_Trends
+        kv = {
+            "timelineId": "VGltZWxpbmU6DACqCgABAAAAAAAAAAYAAA==",
+            "count": 30,
+            "cursor": "DefaultTopCursorValue",
+            "withQuickPromoteEligibilityTweetFields": True
+        }
+        async with aclosing(self._gql_items(op, kv)) as gen:
+            async for x in gen:
+                yield x
+
+    async def trending_tab(self):
+        async with aclosing(self.trending_tab_raw()) as gen:
+            async for rep in gen:
+                for x in parse_trends(rep.json()):
+                    yield x
+        
