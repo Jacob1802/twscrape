@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Any
+import random
 
 import httpx
 from httpx import AsyncClient, Response
@@ -124,7 +125,12 @@ class QueueClient:
         except json.JSONDecodeError:
             res: Any = {"_raw": rep.text}
 
-        limit_remaining = int(rep.headers.get("x-rate-limit-remaining", -1))
+        # Reduce max requests 95% of the time
+        reduce_limit = 0
+        if random.random() < 0.95:
+            reduce_limit = random.randint(20, 30)
+
+        limit_remaining = int(rep.headers.get("x-rate-limit-remaining", -1)) - reduce_limit
         limit_reset = int(rep.headers.get("x-rate-limit-reset", -1))
         # limit_max = int(rep.headers.get("x-rate-limit-limit", -1))
 
@@ -142,7 +148,7 @@ class QueueClient:
             exit(1)
 
         # general api rate limit
-        if limit_remaining == 0 and limit_reset > 0:
+        if limit_remaining <= 0 and limit_reset > 0:
             logger.debug(f"Rate limited: {log_msg}")
             await self._close_ctx(limit_reset)
             raise HandledError()
