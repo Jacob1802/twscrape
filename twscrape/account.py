@@ -4,7 +4,8 @@ import sqlite3
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
-from httpx import AsyncClient, AsyncHTTPTransport
+# from httpx import AsyncClient, AsyncHTTPTransport
+from curl_cffi.requests import AsyncSession
 
 from .models import JSONTrait
 from .utils import utc
@@ -50,25 +51,31 @@ class Account(JSONTrait):
         rs["last_used"] = rs["last_used"].isoformat() if rs["last_used"] else None
         return rs
 
-    def make_client(self, proxy: str | None = None) -> AsyncClient:
+    def make_client(self, proxy: str | None = None) -> AsyncSession:
+        # Determine the proxy
         proxies = [proxy, os.getenv("TWS_PROXY"), self.proxy]
         proxies = [x for x in proxies if x is not None]
         proxy = proxies[0] if proxies else None
 
-        transport = AsyncHTTPTransport(retries=2)
-        client = AsyncClient(proxy=proxy, follow_redirects=True, transport=transport)
+        # Create a session with custom transport for retries
+        client = AsyncSession()
 
-        # saved from previous usage
+        # Set the proxy if available
+        if proxy:
+            client.proxies = {"http": proxy, "https": proxy}
+
+        # Update client settings with saved cookies and headers
         client.cookies.update(self.cookies)
         client.headers.update(self.headers)
 
-        # default settings
+        # Set default headers
         client.headers["user-agent"] = self.user_agent
         client.headers["content-type"] = "application/json"
         client.headers["authorization"] = TOKEN
         client.headers["x-twitter-active-user"] = "yes"
         client.headers["x-twitter-client-language"] = "en"
 
+        # Add CSRF token if it exists in cookies
         if "ct0" in client.cookies:
             client.headers["x-csrf-token"] = client.cookies["ct0"]
 
