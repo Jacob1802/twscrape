@@ -4,6 +4,8 @@ import os
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Callable, TypeVar
+import random
+import binascii
 
 T = TypeVar("T")
 
@@ -214,3 +216,8 @@ def get_env_bool(key: str, default_val: bool = False) -> bool:
     if val is None:
         return default_val
     return val.lower() in ("1", "true", "yes")
+
+def generate_token(size=80):
+    """Generate a random token with hexadecimal digits"""
+    data = random.getrandbits(size * 8).to_bytes(size, "big")
+    return binascii.hexlify(data).decode()
