@@ -87,7 +87,7 @@ class QueueClient:
 
         ctx, self.ctx, self.req_count = self.ctx, None, 0
         username = ctx.acc.username
-        await ctx.clt.aclose()
+        await ctx.clt.close()
 
         if inactive:
             await self.pool.mark_inactive(username, msg)
@@ -130,9 +130,11 @@ class QueueClient:
         if random.random() < 0.95:
             reduce_limit = random.randint(20, 30)
 
-        limit_remaining = int(rep.headers.get("x-rate-limit-remaining", -1)) - reduce_limit
+        limit_remaining = int(rep.headers.get("x-rate-limit-remaining", -1))
         limit_reset = int(rep.headers.get("x-rate-limit-reset", -1))
         # limit_max = int(rep.headers.get("x-rate-limit-limit", -1))
+        if limit_remaining > 0:
+            limit_remaining = abs(limit_remaining - reduce_limit)
 
         err_msg = "OK"
         if "errors" in res:
