@@ -9,7 +9,7 @@ from httpx import AsyncClient, Response
 from .account import Account
 from .imap import imap_get_email_code, imap_login
 from .logger import logger
-from .utils import utc
+from .utils import utc, generate_token
 
 LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json"
 
@@ -269,8 +269,13 @@ async def login(acc: Account, cfg: LoginConfig | None = None) -> Account:
             if not rep:
                 break
 
-        assert "ct0" in client.cookies, "ct0 not in cookies (most likely ip ban)"
-        client.headers["x-csrf-token"] = client.cookies["ct0"]
+        # assert "ct0" in client.cookies, "ct0 not in cookies (most likely ip ban)"
+        if "ct0" in client.cookies:
+            client.headers["x-csrf-token"] = client.cookies["ct0"]
+        else:
+            token = generate_token()
+            client.cookies["ct0"] = token
+            client.headers["x-csrf-token"] = token
         client.headers["x-twitter-auth-type"] = "OAuth2Session"
 
         acc.active = True

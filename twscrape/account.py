@@ -8,7 +8,7 @@ from datetime import datetime
 from curl_cffi.requests import AsyncSession
 
 from .models import JSONTrait
-from .utils import utc
+from .utils import utc, generate_token
 
 TOKEN = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 
@@ -78,5 +78,9 @@ class Account(JSONTrait):
         # Add CSRF token if it exists in cookies
         if "ct0" in client.cookies:
             client.headers["x-csrf-token"] = client.cookies["ct0"]
+        else:
+            token = generate_token()
+            # client.cookies["ct0"] = token
+            client.headers["x-csrf-token"] = token
 
         return client
