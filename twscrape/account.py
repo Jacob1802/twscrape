@@ -4,8 +4,7 @@ import sqlite3
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
-# from httpx import AsyncClient, AsyncHTTPTransport
-from curl_cffi.requests import AsyncSession
+from httpx import AsyncClient, AsyncHTTPTransport
 
 from .models import JSONTrait
 from .utils import utc, generate_token
@@ -51,18 +50,15 @@ class Account(JSONTrait):
         rs["last_used"] = rs["last_used"].isoformat() if rs["last_used"] else None
         return rs
 
-    def make_client(self, proxy: str | None = None) -> AsyncSession:
+    def make_client(self, proxy: str | None = None) -> AsyncClient:
         # Determine the proxy
         proxies = [proxy, os.getenv("TWS_PROXY"), self.proxy]
         proxies = [x for x in proxies if x is not None]
         proxy = proxies[0] if proxies else None
 
         # Create a session with custom transport for retries
-        client = AsyncSession()
-
-        # Set the proxy if available
-        if proxy:
-            client.proxies = {"http": proxy, "https": proxy}
+        transport = AsyncHTTPTransport(retries=2)
+        client = AsyncClient(proxy=proxy, follow_redirects=True, transport=transport)
 
         # Update client settings with saved cookies and headers
         client.cookies.update(self.cookies)

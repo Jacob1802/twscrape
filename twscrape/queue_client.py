@@ -87,7 +87,7 @@ class QueueClient:
 
         ctx, self.ctx, self.req_count = self.ctx, None, 0
         username = ctx.acc.username
-        await ctx.clt.close()
+        await ctx.clt.aclose()
 
         if inactive:
             await self.pool.mark_inactive(username, msg)
