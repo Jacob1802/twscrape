@@ -94,6 +94,7 @@ class QueueClient:
             return
 
         if reset_at > 0:
+            reset_at += (60 * 60 * 24) - (60 * 15) # Plus 24 hours - 15 minuts
             await self.pool.lock_until(ctx.acc.username, self.queue, reset_at, ctx.req_count)
             return
 
@@ -203,7 +204,7 @@ class QueueClient:
             rep.raise_for_status()
         except httpx.HTTPStatusError:
             logger.error(f"Unhandled API response code: {log_msg}")
-            await self._close_ctx(utc.ts() + 60 * 15)  # 15 minutes
+            await self._close_ctx(utc.ts() + 60 * 60 * 24)  # 24 hours
             raise HandledError()
 
     async def get(self, url: str, params: ReqParams = None):
@@ -249,4 +250,4 @@ class QueueClient:
                     ]
 
                     logger.warning(" ".join(msg))
-                    await self._close_ctx(utc.ts() + 60 * 15)  # 15 minutes
+                    await self._close_ctx(utc.ts() + 60 * 60 * 24)  # 24 hours

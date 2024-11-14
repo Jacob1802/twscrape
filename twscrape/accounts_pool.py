@@ -247,7 +247,7 @@ class AccountsPool:
         if int(sqlite3.sqlite_version_info[1]) >= 35:
             qs = f"""
             UPDATE accounts SET
-                locks = json_set(locks, '$.{queue}', datetime('now', '+15 minutes')),
+                locks = json_set(locks, '$.{queue}', datetime('now', '+24 hours')),
                 last_used = datetime({utc.ts()}, 'unixepoch')
             WHERE username = {condition}
             RETURNING *
@@ -257,7 +257,7 @@ class AccountsPool:
             tx = uuid.uuid4().hex
             qs = f"""
             UPDATE accounts SET
-                locks = json_set(locks, '$.{queue}', datetime('now', '+15 minutes')),
+                locks = json_set(locks, '$.{queue}', datetime('now', '+24 hours')),
                 last_used = datetime({utc.ts()}, 'unixepoch'),
                 _tx = '{tx}'
             WHERE username = {condition}
